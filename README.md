@@ -1,5 +1,18 @@
 # SI335 Project: The Battlefield
 
+*   [Overview](#overview)
+*   [Reminders](#reminders)
+*   [Input and output](#input-and-output)
+*   [Example](#example)
+*   [How your code will be run](#how-your-code-will-be-run)
+*   [Limitations and assumptions](#limitations-and-assumptions)
+*   [What to turn in](#what-to-turn-in)
+*   [Submitting](#submitting)
+*   [Helper programs](#helper-programs)
+*   [Languages](#languages)
+*   [Downloading this repo](#downloading-this-repo)
+*   [Grading](#grading)
+
 ## Overview
 
 > *Now the general who wins a battle makes many calculations in his
@@ -46,11 +59,11 @@ of all targets at the time you acquire them.
     [relevant section from the course policy](https://usna.edu/Users/cs/roche/335/resources/policy.php#collaboration)
     on honor and allowed collaboration for programming projects.
 -   **If you have any doubt about what is allowed, just ask!**
--   Part of your grade will be based on \"coding style\". This is mostly
+-   Part of your grade will be based on "coding style". This is mostly
     about whether your code is easy to follow, consistently formatted,
     and sensibly designed. You should use meaningful
     variable/function/class names, clearly explain what is going on in
-    your code, and \"clean up\" any extra debugging or non-functional
+    your code, and "clean up" any extra debugging or non-functional
     parts before submitting.
 -   Be sure to follow the **exact input/output specifications and
     filename conventions** as specified. **You should write any error or
@@ -62,10 +75,9 @@ of all targets at the time you acquire them.
     that it behaves exactly as specified. There will be a few "sanity"
     checks in the submit system that you should take advantage of.
 
-Input and output
-================
+## Input and output
 
-The input to your program will be a single file that stores a \"map\"
+The input to your program will be a single file that stores a "map"
 specifying the battlefield dimensions, the number and locations of any
 obstacles, the number and locations of any assets, and the number,
 location, and *value* of any targets.
@@ -73,24 +85,25 @@ location, and *value* of any targets.
 Specifically, the input map file consists of four parts:
 
 1.  **Dimensions**: Two integers for the number of rows and columns in
-    the battlefield,
+    the battlefield.
 2.  **Obstacles**: An integer for the number of obstacles, followed by
     that many pairs of integers for the coordinates of each obstacle.
 3.  **Assets**: An integer for the number of assets, followed by that
     many pairs of integers for the starting coordinates of each asset.
 4.  **Targets**: An integer for the number of targets, followed by that
     many triples of integers, indicating the row index, column index,
-    and *value* of each target.
+    and *starting value* of each target.
 
-The output from your program will be in a file specifying the \"moves\"
+There is a single blank line separating each part.
+
+The output from your program will be in a file specifying the "moves"
 that each asset should make in order to reach the targets quickly.
 Specifically, your output will consist of a number of lines, one per
 step. On each line, there will be *k* directions, where *k* is the
 number of assets. Each direction is either `U`, `D`, `L`, or `R`. Note
 it is not allowed for an asset to stand still!
 
-Example
-=======
+## Example
 
 Here is an example map file:
 
@@ -131,10 +144,10 @@ You can see that the file above is split into 4 parts:
 4.  **Targets**: There are 11 targets, at the specified coordinates.
     Each target also has a specified *starting value*.
 
-A visual representation of this map (which you could see yourself by
-running `python3 show.py <map_file>`) is below. The obstacles are black
-diamonds, the assets are the numbered blue squares, and the targets are
-the letters in magenta.
+A visual representation of this map (which comes from running
+`python3 show.py`) is below. The obstacles are
+asterisks, the assets are numbers (in green), and the targets are
+letters.
 
 **Notice: rows and columns are numbered from 0, starting at the top-left
 corner.**
@@ -167,13 +180,34 @@ says asset 1 should move one space to the right, and asset 2 should move
 and asset 2 keeps moving left. They both keep going in the same
 direction on step 3.
 
-Here\'s what those three steps look like on the map. (You could see this
-by running `python3 show.py <map_file> <moves_file>`.)
+Here's what those three steps look like on the map. (You could see this
+by running `python3 show.py sample-map.txt sample-moves.txt`.)
 
 ![](map-3step.png)
 
-Limitations and assumptions
-===========================
+## How your code will be run
+
+When run, your program should prompt first for the map filename,
+and then for the moves filename. The first filename is the *input* to
+your program, a map file like shown above. The second filename is the
+*output* from your program, which your code must create and write to,
+which will contain a list of moves like the example given above.
+
+Any other output from running your program will be ignored by the
+auto-testing. I will only look at the resulting moves file.
+
+So a run of your program would look like this:
+
+```
+$ ./plan
+Map: sample-map.txt
+Moves: my-output.txt
+```
+
+and after this, a new file called `my-output.txt` should be created with
+lines having `R`, `L`, `U`, `D` characters to specify the moves.
+
+## Limitations and assumptions
 
 You may assume the map files always fall within the following limits:
 
@@ -181,94 +215,120 @@ You may assume the map files always fall within the following limits:
 2.  The number of **assets** is at least 1 and at most 3
 3.  The number of **targets** is at most 26.
 
-You can implement your solution in C++, Python, or Java (or something
-else if you talk to Dr. Roche about it). In any case, it must complete
-execution and output all the moves **within 30 seconds runtime**. Of
-course, it\'s OK if it\'s faster than that!
+You can implement your solution in any programming language that I am
+able to easily use. (See the Languages section below, and discuss in
+advance with Dr. Roche if you want to use something other than the six
+languages listed.)
 
-Initially, you may assume that all obstacles, targets, and assets are in
+In any case, it must complete
+execution and output all the moves **within 30 seconds runtime**. Of
+course, it's OK if it's faster than that!
+
+You may assume that all obstacles, targets, and assets start out in
 distinct locations. Assets are not allowed to move onto obstacles, but
 they can move into the same square as each other if you want to do that
 for some reason. Keep in mind, you only get points for a target the
 *first time* any asset reaches that target.
 
-README file
-===========
+## What to turn in
 
-Your submission **must** include a `README.txt` file with at least the
-following information:
+Submit to [submit.moboard.com](https://submit.moboard.com/) under SI335
+and assignment name `proj3`. Your submission should contain two files:
 
--   Any outside resources you used
--   A high-level description of how your program works. I don\'t need
-    pseudocode here, but it should explain your algorithm, what kinds of
-    algorithms or ideas from class it uses, and what kinds of data
-    structures you are using.
--   What *algorithm design paradigms* did you employ in designing your
-    algorithm?
--   Give some discussion of what the big-Oh *runtime* of your program
-    is. It\'s OK if you don\'t have something totally exact here, but be
-    as specific as you can.
+*   Your source code, contained in a single file called
+    `plan.cpp` or similar (see table below under Languages)
 
-Starter code
-============
+*   A `README.txt` that:
 
-There is no starter code for the `plan` program that you are going to
-write. You really get to write it yourself, from scratch!
+    +   Has your name
+    +   Cites (specifically!) any references you used in accordance with
+        the collaboration policy
+    +   Briefly explains how your program works.
+        What are the main ideas that form the basis of how your program
+        works?
+        What existing algorithms from this class (or another) did you
+        draw on for inspiration?
+
+## Helper programs
 
 The following three Python programs should be helpful in testing and
-developing your code. The `generate.py` program will generate a random
-map with the specified dimensions and number of obstacles, assets, and
-targets. The `show.py` program will make a nice visual \"movie\" of your
-moves, along with the scores, so you can see what your program is
-producing. The `score.py` program does the same, but there\'s no visual
-component, just the scores. This is mostly useful for when you get into
-the bigger maps that might be too large to fit on the screen visually.
+developing your code. All three are included in this git repository:
+
+*   `generate.py`: generates a random map with the specified dimensions
+    and number of obstacles, assets, and targets.
+*   `show.py`: makes a nice visual "movie" of your
+    moves, along with the scores, so you can see what your program is
+    producing.
+*   `score.py`: does the same, but there's no visual
+    component, just the scores. This is mostly useful for when you get into
+    the bigger maps that might be too large to fit on the screen visually.
 
 You run each of these programs by typing, for example,
 `python3 generate.py`. They all have nice help messages if you run them
 with the `-h` flag.
 
-Submission instructions
-=======================
+## Languages
 
-Submit according to the normal instructions [on this
-page](../submit.php). You have a choice of programming in Java, C++, or
-Python. In any case, your program will take **two command-line
-arguments**. The first will specify the map filename (your input), and
-the second will specify the moves filename (your output).
+Your program must be called `plan` (or `Plan` for java) and can be written
+in any programming language as long as I can run it.
 
-Java specifics
---------------
+Here are the "standard" languages:
 
-Put your `main()` method in a class called `Plan` in a file called
-`Plan.java`. You can also submit any other `.java` files you like, and
-you also need to submit your `README.txt`. I will compile and run your
-program like:
+Language | Source code filename
+-------- | --------------------
+C        | `plan.c`
+C++      | `plan.cpp`
+Java     | `Plan.java` (and your `main` must be in the `Plan` class)
+Python3  | `plan.py`
+Rust     | `plan.rs`
+Haskell  | `plan.hs`
 
-    $ javac *.java
-    $ java Plan mapfile movesfile
+To use one of these languages, just put *all* of your source code into a
+file with the given name and submit it.  **You must use the names above
+and put all your source code in a single file**.
 
-C++ specifics
--------------
+(Note, for Java, it *is* possible to put multiple `class`es in the same
+`.java` file as long as only the class with the `main` method is `public`.)
 
-Put your `main()` method in a file called `plan.cpp`. You can also
-submit any other `.cpp` or `.h` files you like, and you also need to
-submit your `README.txt`. I will compile and run your program like:
+If you want to use a different language than the ones listed, send me an
+email at least a few days in advance.
 
-    $ g++ -O3 -std=c++11 *.cpp -o plan
-    $ ./plan mapfile movesfile
+## Downloading this repo
 
-Python specifics
-----------------
+To download ("clone") this repository, run from a linux command-line:
 
-Put your main program in a file called `plan.py`. You can also submit
-any other `.py` files you like, and you also need to submit your
-`README.txt`. I will run your program like:
+```bash
+git clone https://github.com/si335usna/battlefield.git
+```
 
-    $ python3 plan.py mapfile movesfile
+This will create a directory `battlefield` from wherever you ran that
+command, with all of these files. You can `cd` into that directory and
+get to work!
 
-Grading
-=======
+Later, if some updates get made to this starter code repository and you
+want to copy them to your local copy, you can just run:
+
+```bash
+git commit -am "saving my code"
+git pull -s recursive -X ours origin main
+```
+
+I *strongly encourage* you to save your work using GitHub (or BitBucket
+or GitLab or any other git-hosting service). For example, if you create
+a free github account with username `myself`, then create a repository
+(click the big + sign) called `myrepo`, you can connect that to your
+local version by running
+
+```bash
+git remote add mine https://github.com/myself/myrepo
+git push -u mine main
+```
+
+**Note**: Make sure your repository is *private*; otherwise you are
+sharing your solutions with the world and probably violating the course
+policy.
+
+## Grading
 
 Your program will be tested on a variety of maps ranging from the
 smallest possible, with one asset and few obstacles and targets, to the
@@ -276,18 +336,22 @@ largest possible 200x200 with three assets, many obstacles, and 26
 targets.
 
 Remember, your program has to **finish within 30 seconds** on any input
-file. Otherwise, you won\'t get any points for that map.
+file. Otherwise, you won't get any points for that map.
 
 After running your plan program, I will use the `score.py` program,
-along with the map file, to find out how many points your \"moves\"
-score. Say your moves score \\(x\\) points. After looking at all of the
-sumbissions, as well as my sample solutions, I will also get the maximum
+along with the map file, to find out how many points your "moves"
+score.
+
+Say your moves score *x* points. After running all of the
+submissions, *as well as my sample solutions*, I will also get the maximum
 number of points any of them score on that map file, which I will call
-\\(m\\). Your grade for that map will be determined from the ratio
-\\(\\frac{x}{m}\\) of your points divided by the maximum number of
+*m*. Your grade for that map will be determined from the ratio
+*x*/*m* of your points divided by the maximum number of
 points for that map. There will be bonus points available *on every
 sample map*, if you get the maximum number of points (or close to it).
 
 As usual, besides these auto-tests, your program will also be graded on
-readability, documentation, and code organization. Follow the \"coding
-guidelines\" outlined at the beginning of this page.
+the quality of your README file, as well as the overall
+readability, documentation, and code organization of your source code,
+according to the guidelines [on this
+page](https://www.usna.edu/Users/cs/roche/335/resources/codestyle.php).
