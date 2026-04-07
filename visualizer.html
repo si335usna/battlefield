@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SI335 Battlefield Visualizer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+  :root {
+    --navy-dark: #001a33;
+    --navy: #003366;
+    --navy-mid: #004080;
+    --navy-light: #1a5276;
+    --gold: #c5960c;
+    --gold-bright: #e6b422;
+    --gold-dim: #8b6914;
+    --bg: #0a1628;
+    --bg-panel: #0f1f38;
+    --bg-panel-alt: #132744;
+    --border: #1e3a5f;
+    --text: #c8d6e5;
+    --text-dim: #5a7a99;
+    --text-bright: #eaf2f8;
+    --danger: #e74c3c;
+    --success: #27ae60;
+    --cell: 28px;
+    --grid-line: #152d4a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* === HEADER === */
+  .header {
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%);
+    border-bottom: 2px solid var(--gold-dim);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .header h1 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 18px; font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: 0.5px;
+  }
+  .header h1 span { color: var(--gold); }
+  .header-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  /* === LAYOUT === */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 68px);
+  }
+
+  /* === SIDEBAR === */
+  .sidebar {
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    max-height: calc(100vh - 68px);
+  }
+  .panel {
+    background: var(--bg-panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  /* File inputs */
+  .file-row {
+    margin-bottom: 10px;
+  }
+  .file-row label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .file-row input[type="file"] { display: none; }
+  .file-btn {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--navy);
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .file-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .file-btn.loaded { border-style: solid; border-color: var(--success); color: var(--success); }
+
+  /* Controls */
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .ctrl-btn {
+    padding: 8px 4px;
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .ctrl-btn:hover { background: var(--navy-mid); border-color: var(--gold-dim); }
+  .ctrl-btn:active { transform: scale(0.95); }
+  .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+  .ctrl-btn.active { background: var(--gold-dim); color: var(--navy-dark); }
+
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .speed-row label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 44px;
+  }
+  .speed-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--gold);
+    height: 4px;
+  }
+  .speed-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    width: 36px;
+    text-align: right;
+  }
+
+  /* Scoreboard */
+  .score-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    text-align: center;
+    padding: 6px 0;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .stat {
+    text-align: center;
+    padding: 6px;
+    background: var(--bg);
+    border-radius: 4px;
+  }
+  .stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-bright);
+  }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* Target list */
+  .target-list {
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .target-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    border-bottom: 1px solid var(--bg);
+  }
+  .target-label-char {
+    width: 20px; height: 20px;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 11px;
+    background: var(--gold-dim);
+    color: var(--navy-dark);
+    flex-shrink: 0;
+  }
+  .target-item.acquired .target-label-char {
+    background: var(--success);
+  }
+  .target-item.expired .target-label-char {
+    background: var(--danger);
+    opacity: 0.5;
+  }
+  .target-val {
+    margin-left: auto;
+    color: var(--text-dim);
+  }
+  .target-val.positive { color: var(--success); }
+
+  /* Event log */
+  .event-log {
+    max-height: 140px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    line-height: 1.6;
+  }
+  .event-log .ev { padding: 2px 0; border-bottom: 1px solid rgba(30,58,95,0.4); }
+  .ev-good { color: var(--success); }
+  .ev-bad { color: var(--danger); }
+  .ev-neutral { color: var(--text-dim); }
+
+  /* === MAIN AREA === */
+  .main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: auto;
+    position: relative;
+  }
+  .main.empty-state {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .empty-msg {
+    font-size: 15px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.7;
+  }
+  .empty-msg strong { color: var(--gold); }
+
+  canvas {
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    background: var(--navy-dark);
+    image-rendering: pixelated;
+  }
+
+  /* Responsive */
+  @media (max-width: 800px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      max-height: none;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="../../calendar-core/images/web-icon.png" width="36px">
+  <h1><span>Battlefield</span> Visualizer</h1>
+  <div class="header-sub">SI335 · Computer Algorithms</div>
+</div>
+
+<div class="app">
+  <div class="sidebar">
+    <!-- FILE LOADING -->
+    <div class="panel">
+      <div class="panel-title">Mission Files</div>
+      <div class="file-row">
+        <label>Map File</label>
+        <div class="file-btn" id="mapBtn" onclick="document.getElementById('mapFile').click()">
+          Select map file…
+        </div>
+        <input type="file" id="mapFile" accept=".txt" />
+      </div>
+      <div class="file-row">
+        <label>Moves File</label>
+        <div class="file-btn" id="movesBtn" onclick="document.getElementById('movesFile').click()">
+          Select moves file…
+        </div>
+        <input type="file" id="movesFile" accept=".txt" />
+      </div>
+    </div>
+
+    <!-- PLAYBACK CONTROLS -->
+    <div class="panel">
+      <div class="panel-title">Playback</div>
+      <div class="controls">
+        <button class="ctrl-btn" id="btnReset" onclick="resetPlayback()" title="Reset" disabled>⏮</button>
+        <button class="ctrl-btn" id="btnStep" onclick="stepOnce()" title="Step" disabled>⏭</button>
+        <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()" title="Play/Pause" disabled>▶</button>
+        <button class="ctrl-btn" id="btnEnd" onclick="skipToEnd()" title="Skip to End" disabled>⏩</button>
+      </div>
+      <div class="speed-row">
+        <label>Speed</label>
+        <input type="range" id="speedSlider" min="1" max="30" value="5" oninput="updateSpeed()" />
+        <div class="speed-val" id="speedVal">5 fps</div>
+      </div>
+    </div>
+
+    <!-- SCORE -->
+    <div class="panel">
+      <div class="panel-title">Score</div>
+      <div class="score-display" id="scoreDisplay">0</div>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-val" id="stepDisplay">0</div>
+          <div class="stat-label">Step</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="assetsAlive">-</div>
+          <div class="stat-label">Assets</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="targetsLeft">-</div>
+          <div class="stat-label">Targets</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="potentialPts">-</div>
+          <div class="stat-label">Potential</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARGETS -->
+    <div class="panel">
+      <div class="panel-title">Targets</div>
+      <div class="target-list" id="targetList">
+        <div style="color:var(--text-dim); font-size:11px; font-family:'JetBrains Mono',monospace;">Load a map to see targets</div>
+      </div>
+    </div>
+
+    <!-- EVENT LOG -->
+    <div class="panel">
+      <div class="panel-title">Event Log</div>
+      <div class="event-log" id="eventLog">
+        <div class="ev ev-neutral">Waiting for mission files…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main empty-state" id="mainArea">
+    <div class="empty-msg">
+      Load a <strong>map file</strong> and optionally a <strong>moves file</strong><br>
+      to visualize a battlefield solution.
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ STATE ============
+let world = null;   // parsed map
+let moves = null;   // parsed moves
+let stepIdx = 0;
+let playing = false;
+let playTimer = null;
+let fps = 5;
+let canvas, ctx;
+const CELL = 28;
+const PAD = 2;
+
+// ============ PARSING ============
+function parseMap(text) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  let i = 0;
+  const [rows, cols] = lines[i++].split(/\s+/).map(Number);
+
+  const nobst = parseInt(lines[i++]);
+  const obstacles = new Set();
+  for (let o = 0; o < nobst; o++) {
+    const [r, c] = lines[i++].split(/\s+/).map(Number);
+    obstacles.add(r + ',' + c);
+  }
+
+  const nasset = parseInt(lines[i++]);
+  const assetStarts = [];
+  for (let a = 0; a < nasset; a++) {
+    const [r, c] = lines[i++].split(/\s+/).map(Number);
+    assetStarts.push([r, c]);
+  }
+
+  const ntarg = parseInt(lines[i++]);
+  const targets = [];
+  for (let t = 0; t < ntarg; t++) {
+    const [r, c, v] = lines[i++].split(/\s+/).map(Number);
+    const label = String.fromCharCode(65 + t);
+    targets.push({ label, r, c, value: v });
+  }
+
+  return { rows, cols, obstacles, nasset, assetStarts, targets };
+}
+
+function parseMoves(text, nasset) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const dirMap = { U: [-1, 0], D: [1, 0], L: [0, -1], R: [0, 1] };
+  return lines.map(line => {
+    const dirs = line.toUpperCase().split('');
+    return dirs.slice(0, nasset).map(d => dirMap[d] || [0, 0]);
+  });
+}
+
+// ============ SIMULATION STATE ============
+function initSim() {
+  return {
+    assets: world.assetStarts.map(a => [...a]),
+    dead: new Set(),
+    targets: world.targets.map(t => ({ ...t, acquired: false, expired: false, acquiredStep: -1 })),
+    targetLoc: {},
+    score: 0,
+    elapsed: 0,
+    trails: world.assetStarts.map(() => []),
+    events: []
+  };
+}
+
+let sim = null;
+
+function buildTargetLoc(sim) {
+  sim.targetLoc = {};
+  sim.targets.forEach((t, i) => {
+    if (!t.acquired && !t.expired) sim.targetLoc[t.r + ',' + t.c] = i;
+  });
+}
+
+function simStep(sim, move) {
+  sim.elapsed++;
+  const events = [];
+
+  // Expire targets whose value has decayed to 0
+  sim.targets.forEach((t, i) => {
+    if (!t.acquired && !t.expired && t.value <= sim.elapsed) {
+      t.expired = true;
+      delete sim.targetLoc[t.r + ',' + t.c];
+      events.push({ type: 'expire', msg: `Target ${t.label} expired (value reached 0)` });
+    }
+  });
+
+  // Move each asset
+  for (let a = 0; a < world.nasset; a++) {
+    if (sim.dead.has(a)) continue;
+    const [dr, dc] = move[a] || [0, 0];
+    sim.trails[a].push([...sim.assets[a]]);
+    sim.assets[a][0] += dr;
+    sim.assets[a][1] += dc;
+    const [r, c] = sim.assets[a];
+
+    if (r < 0 || r >= world.rows || c < 0 || c >= world.cols) {
+      sim.assets[a][0] -= dr;
+      sim.assets[a][1] -= dc;
+      sim.dead.add(a);
+      events.push({ type: 'bad', msg: `Asset ${a + 1} ran out of bounds` });
+    } else if (world.obstacles.has(r + ',' + c)) {
+      sim.dead.add(a);
+      events.push({ type: 'bad', msg: `Asset ${a + 1} hit obstacle at (${r},${c})` });
+    } else {
+      const key = r + ',' + c;
+      if (key in sim.targetLoc) {
+        const ti = sim.targetLoc[key];
+        const tgt = sim.targets[ti];
+        const pts = tgt.value - sim.elapsed;
+        tgt.acquired = true;
+        tgt.acquiredStep = sim.elapsed;
+        delete sim.targetLoc[key];
+        sim.score += pts;
+        events.push({ type: 'good', msg: `Asset ${a + 1} acquired ${tgt.label} for ${pts} pts` });
+      }
+    }
+  }
+  sim.events.push(...events);
+  return events;
+}
+
+function isActive(sim) {
+  const hasTargets = sim.targets.some(t => !t.acquired && !t.expired);
+  const hasAssets = sim.dead.size < world.nasset;
+  return hasTargets && hasAssets;
+}
+
+// ============ RENDERING ============
+function initCanvas() {
+  const mainArea = document.getElementById('mainArea');
+  mainArea.classList.remove('empty-state');
+  mainArea.innerHTML = '';
+
+  canvas = document.createElement('canvas');
+  canvas.width = world.cols * CELL + PAD * 2;
+  canvas.height = world.rows * CELL + PAD * 2;
+  mainArea.appendChild(canvas);
+  ctx = canvas.getContext('2d');
+}
+
+function draw() {
+  if (!ctx || !sim) return;
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = '#152d4a';
+  ctx.lineWidth = 0.5;
+  for (let r = 0; r <= world.rows; r++) {
+    ctx.beginPath();
+    ctx.moveTo(PAD, PAD + r * CELL);
+    ctx.lineTo(PAD + world.cols * CELL, PAD + r * CELL);
+    ctx.stroke();
+  }
+  for (let c = 0; c <= world.cols; c++) {
+    ctx.beginPath();
+    ctx.moveTo(PAD + c * CELL, PAD);
+    ctx.lineTo(PAD + c * CELL, PAD + world.rows * CELL);
+    ctx.stroke();
+  }
+
+  // Trails
+  sim.trails.forEach((trail, ai) => {
+    if (trail.length === 0) return;
+    ctx.fillStyle = sim.dead.has(ai) ? 'rgba(231,76,60,0.15)' : 'rgba(39,174,96,0.12)';
+    trail.forEach(([r, c]) => {
+      ctx.fillRect(PAD + c * CELL + 1, PAD + r * CELL + 1, CELL - 2, CELL - 2);
+    });
+  });
+
+  // Obstacles
+  ctx.fillStyle = '#3d1f1f';
+  ctx.strokeStyle = '#7a3333';
+  ctx.lineWidth = 1;
+  world.obstacles.forEach(key => {
+    const [r, c] = key.split(',').map(Number);
+    const x = PAD + c * CELL, y = PAD + r * CELL;
+    ctx.fillRect(x + 2, y + 2, CELL - 4, CELL - 4);
+    ctx.strokeRect(x + 2, y + 2, CELL - 4, CELL - 4);
+    // X mark
+    ctx.strokeStyle = '#aa4444';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x + 6, y + 6); ctx.lineTo(x + CELL - 6, y + CELL - 6);
+    ctx.moveTo(x + CELL - 6, y + 6); ctx.lineTo(x + 6, y + CELL - 6);
+    ctx.stroke();
+    ctx.strokeStyle = '#7a3333';
+    ctx.lineWidth = 1;
+  });
+
+  // Targets
+  sim.targets.forEach(t => {
+    if (t.acquired || t.expired) return;
+    const x = PAD + t.c * CELL, y = PAD + t.r * CELL;
+    const currentVal = t.value - sim.elapsed;
+    const pct = currentVal / t.value;
+
+    // Background glow based on value remaining
+    ctx.fillStyle = `rgba(197,150,12,${0.1 + pct * 0.25})`;
+    ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+
+    // Border
+    ctx.strokeStyle = pct > 0.5 ? '#c5960c' : (pct > 0.2 ? '#e67e22' : '#e74c3c');
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x + 2, y + 2, CELL - 4, CELL - 4);
+
+    // Label
+    ctx.fillStyle = '#e6b422';
+    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(t.label, x + CELL / 2, y + 2);
+
+    // Value
+    ctx.fillStyle = pct > 0.2 ? '#c8d6e5' : '#e74c3c';
+    ctx.font = '9px "JetBrains Mono", monospace';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(currentVal, x + CELL / 2, y + CELL - 1);
+  });
+
+  // Acquired targets (faded)
+  sim.targets.forEach(t => {
+    if (!t.acquired) return;
+    const x = PAD + t.c * CELL, y = PAD + t.r * CELL;
+    ctx.fillStyle = 'rgba(39,174,96,0.15)';
+    ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+    ctx.fillStyle = 'rgba(39,174,96,0.5)';
+    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('✓', x + CELL / 2, y + CELL / 2);
+  });
+
+  // Assets
+  for (let a = 0; a < world.nasset; a++) {
+    const [r, c] = sim.assets[a];
+    const x = PAD + c * CELL, y = PAD + r * CELL;
+    const isDead = sim.dead.has(a);
+
+    if (isDead) {
+      ctx.fillStyle = 'rgba(231,76,60,0.3)';
+      ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+      ctx.fillStyle = '#e74c3c';
+      ctx.font = 'bold 15px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✕', x + CELL / 2, y + CELL / 2);
+    } else {
+      // Asset glow
+      ctx.shadowColor = '#27ae60';
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = '#1a5c2e';
+      ctx.fillRect(x + 2, y + 2, CELL - 4, CELL - 4);
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = '#27ae60';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 2, y + 2, CELL - 4, CELL - 4);
+
+      ctx.fillStyle = '#2ecc71';
+      ctx.font = 'bold 16px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(a + 1, x + CELL / 2, y + CELL / 2 + 1);
+    }
+  }
+}
+
+// ============ UI UPDATES ============
+function updateUI() {
+  document.getElementById('scoreDisplay').textContent = sim.score;
+  document.getElementById('stepDisplay').textContent = sim.elapsed;
+  document.getElementById('assetsAlive').textContent =
+    (world.nasset - sim.dead.size) + '/' + world.nasset;
+  const remaining = sim.targets.filter(t => !t.acquired && !t.expired).length;
+  const acquired = sim.targets.filter(t => t.acquired).length;
+  document.getElementById('targetsLeft').textContent = acquired + '/' + sim.targets.length;
+
+  // Potential remaining points
+  let potential = 0;
+  sim.targets.forEach(t => {
+    if (!t.acquired && !t.expired) {
+      const v = t.value - sim.elapsed;
+      if (v > 0) potential += v;
+    }
+  });
+  document.getElementById('potentialPts').textContent = potential;
+
+  updateTargetList();
+}
+
+function updateTargetList() {
+  const el = document.getElementById('targetList');
+  el.innerHTML = sim.targets.map(t => {
+    let cls = '';
+    let valText = '';
+    if (t.acquired) {
+      cls = 'acquired';
+      const pts = t.value - t.acquiredStep;
+      valText = `+${pts}`;
+    } else if (t.expired) {
+      cls = 'expired';
+      valText = '0';
+    } else {
+      const cur = t.value - sim.elapsed;
+      valText = cur > 0 ? cur : '0';
+    }
+    return `<div class="target-item ${cls}">
+      <div class="target-label-char">${t.label}</div>
+      <span>(${t.r},${t.c})</span>
+      <span class="target-val ${t.acquired ? 'positive' : ''}">${valText}</span>
+    </div>`;
+  }).join('');
+}
+
+function addEvent(evts) {
+  const el = document.getElementById('eventLog');
+  evts.forEach(e => {
+    const cls = e.type === 'good' ? 'ev-good' : (e.type === 'bad' ? 'ev-bad' : 'ev-neutral');
+    const div = document.createElement('div');
+    div.className = 'ev ' + cls;
+    div.textContent = `[${sim.elapsed}] ${e.msg}`;
+    el.appendChild(div);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+// ============ PLAYBACK ============
+function enableControls(en) {
+  document.getElementById('btnReset').disabled = !en;
+  document.getElementById('btnStep').disabled = !en;
+  document.getElementById('btnPlay').disabled = !en;
+  document.getElementById('btnEnd').disabled = !en;
+}
+
+function stepOnce() {
+  if (!moves || stepIdx >= moves.length) return;
+  if (!isActive(sim)) return;
+  const evts = simStep(sim, moves[stepIdx]);
+  stepIdx++;
+  addEvent(evts);
+  if (!isActive(sim) || stepIdx >= moves.length) {
+    stopPlay();
+    addEvent([{ type: 'neutral', msg: 'Simulation complete. Final score: ' + sim.score }]);
+  }
+  draw();
+  updateUI();
+}
+
+function togglePlay() {
+  if (playing) {
+    stopPlay();
+  } else {
+    playing = true;
+    document.getElementById('btnPlay').textContent = '⏸';
+    document.getElementById('btnPlay').classList.add('active');
+    playTimer = setInterval(() => {
+      if (!moves || stepIdx >= moves.length || !isActive(sim)) {
+        stopPlay();
+        if (sim) addEvent([{ type: 'neutral', msg: 'Simulation complete. Final score: ' + sim.score }]);
+        return;
+      }
+      stepOnce();
+    }, 1000 / fps);
+  }
+}
+
+function stopPlay() {
+  playing = false;
+  if (playTimer) clearInterval(playTimer);
+  playTimer = null;
+  document.getElementById('btnPlay').textContent = '▶';
+  document.getElementById('btnPlay').classList.remove('active');
+}
+
+function resetPlayback() {
+  stopPlay();
+  stepIdx = 0;
+  sim = initSim();
+  buildTargetLoc(sim);
+  document.getElementById('eventLog').innerHTML = '<div class="ev ev-neutral">Reset to initial state.</div>';
+  draw();
+  updateUI();
+}
+
+function skipToEnd() {
+  stopPlay();
+  if (!moves) return;
+  while (stepIdx < moves.length && isActive(sim)) {
+    const evts = simStep(sim, moves[stepIdx]);
+    stepIdx++;
+    evts.forEach(e => sim.events.push(e));
+  }
+  // Rebuild event log summary
+  const el = document.getElementById('eventLog');
+  el.innerHTML = '';
+  sim.events.forEach(e => {
+    const cls = e.type === 'good' ? 'ev-good' : (e.type === 'bad' ? 'ev-bad' : 'ev-neutral');
+    const div = document.createElement('div');
+    div.className = 'ev ' + cls;
+    div.textContent = e.msg;
+    el.appendChild(div);
+  });
+  const endDiv = document.createElement('div');
+  endDiv.className = 'ev ev-neutral';
+  endDiv.textContent = `Simulation complete. Final score: ${sim.score}`;
+  el.appendChild(endDiv);
+  el.scrollTop = el.scrollHeight;
+  draw();
+  updateUI();
+}
+
+function updateSpeed() {
+  fps = parseInt(document.getElementById('speedSlider').value);
+  document.getElementById('speedVal').textContent = fps + ' fps';
+  if (playing) {
+    clearInterval(playTimer);
+    playTimer = setInterval(() => {
+      if (!moves || stepIdx >= moves.length || !isActive(sim)) {
+        stopPlay();
+        return;
+      }
+      stepOnce();
+    }, 1000 / fps);
+  }
+}
+
+// ============ FILE LOADING ============
+document.getElementById('mapFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      world = parseMap(ev.target.result);
+      document.getElementById('mapBtn').textContent = file.name;
+      document.getElementById('mapBtn').classList.add('loaded');
+      initCanvas();
+      sim = initSim();
+      buildTargetLoc(sim);
+      draw();
+      updateUI();
+
+      if (moves) enableControls(true);
+      else {
+        // Show map without moves — still enable reset
+        document.getElementById('btnReset').disabled = false;
+        document.getElementById('eventLog').innerHTML =
+          '<div class="ev ev-neutral">Map loaded: ' + world.rows + '×' + world.cols +
+          ', ' + world.nasset + ' assets, ' + world.targets.length + ' targets</div>';
+      }
+    } catch (err) {
+      alert('Error parsing map file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('movesFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      if (!world) { alert('Load a map file first.'); return; }
+      moves = parseMoves(ev.target.result, world.nasset);
+      document.getElementById('movesBtn').textContent = file.name;
+      document.getElementById('movesBtn').classList.add('loaded');
+      enableControls(true);
+      resetPlayback();
+      document.getElementById('eventLog').innerHTML =
+        '<div class="ev ev-neutral">Moves loaded: ' + moves.length + ' steps</div>';
+    } catch (err) {
+      alert('Error parsing moves file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === ' ' && moves) { e.preventDefault(); togglePlay(); }
+  if (e.key === 'ArrowRight' && moves) { e.preventDefault(); stepOnce(); }
+  if (e.key === 'r' || e.key === 'R') { e.preventDefault(); resetPlayback(); }
+});
+</script>
+
+</body>
+</html>
